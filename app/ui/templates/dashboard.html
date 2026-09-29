@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Management Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <nav class="navbar">
+    <div class="brand">
+      <div class="brand-icon">📊</div>
+      <span>VisionPulse Management Portal</span>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Live Kiosk</a>
+      <a href="/dashboard" class="nav-link active">Management Portal</a>
+      <button onclick="openEnrollModal()" class="btn btn-primary">+ Enroll Employee</button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1 style="font-size: 1.6rem; font-weight: 700;">Attendance Records & Employees</h1>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">View live attendance logs, export reports, and manage registered faces.</p>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <input type="date" id="export-date" class="form-control" style="width: auto; padding: 0.5rem 0.8rem;">
+        <button onclick="exportCSV()" class="btn btn-secondary">📥 Export CSV Report</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display: flex; gap: 1rem; border-bottom: 1px solid var(--border-card); margin-bottom: 1.5rem;">
+      <button class="nav-link active" id="tab-btn-logs" onclick="switchTab('logs')">Today's Attendance Logs</button>
+      <button class="nav-link" id="tab-btn-emps" onclick="switchTab('emps')">Enrolled Employees Directory</button>
+    </div>
+
+    <!-- Attendance Logs View -->
+    <div id="view-logs" class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Event</th>
+            <th>Confidence</th>
+            <th>Snapshot</th>
+          </tr>
+        </thead>
+        <tbody id="logs-tbody">
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading attendance logs...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Enrolled Employees View -->
+    <div id="view-emps" class="table-wrapper" style="display: none;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Enrolled Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="emps-tbody">
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading registered roster...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Reusable Enrollment Modal -->
+  <div class="modal-overlay" id="enroll-modal">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.3rem; font-weight: 700;">Enroll New Employee</h2>
+        <button onclick="closeEnrollModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <form onsubmit="submitEnrollment(event)">
+        <div class="form-group">
+          <label class="form-label" for="enroll-id">Employee ID *</label>
+          <input type="text" id="enroll-id" class="form-control" placeholder="e.g. EMP-1042" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="enroll-name">Full Name *</label>
+          <input type="text" id="enroll-name" class="form-control" placeholder="e.g. Jane Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="enroll-dept">Department</label>
+          <input type="text" id="enroll-dept" class="form-control" placeholder="e.g. Engineering">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Face Image Source</label>
+          <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="startEnrollWebcam()">Use Web Camera</button>
+            <button type="button" class="btn btn-primary" id="btn-capture-snapshot" style="display:none;" onclick="captureSnapshot()">Snap Photo</button>
+          </div>
+
+          <div style="width: 100%; border-radius: var(--radius-md); overflow: hidden; background: #000; text-align: center;">
+            <video id="enroll-video" autoplay playsinline style="width: 100%; display: none;"></video>
+            <canvas id="enroll-canvas" style="width: 100%; display: none;"></canvas>
+          </div>
+
+          <div style="margin-top: 0.75rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Or upload a clear portrait:</span>
+            <input type="file" id="enroll-file" accept="image/*" class="form-control" style="margin-top: 0.4rem;">
+          </div>
+        </div>
+
+        <div id="enroll-status" style="margin-bottom: 1rem; font-size: 0.85rem; min-height: 1.2rem;"></div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeEnrollModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Register Face</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+  <script>
+    function switchTab(tab) {
+      const logsView = document.getElementById("view-logs");
+      const empsView = document.getElementById("view-emps");
+      const logsBtn = document.getElementById("tab-btn-logs");
+      const empsBtn = document.getElementById("tab-btn-emps");
+
+      if (tab === 'logs') {
+        logsView.style.display = 'block';
+        empsView.style.display = 'none';
+        logsBtn.classList.add('active');
+        empsBtn.classList.remove('active');
+        loadTableLogs();
+      } else {
+        logsView.style.display = 'none';
+        empsView.style.display = 'block';
+        logsBtn.classList.remove('active');
+        empsBtn.classList.add('active');
+        loadEmployeeTable();
+      }
+    }
+
+    async function loadTableLogs() {
+      try {
+        const res = await fetch("/api/attendance/today");
+        const data = await res.json();
+        const tbody = document.getElementById("logs-tbody");
+
+        if (!data.logs || data.logs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No attendance logged today.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.logs.map(log => {
+          const isCheckIn = log.event_type === "CHECK_IN";
+          const tagClass = isCheckIn ? "tag-checkin" : "tag-checkout";
+          const snapshotHtml = log.snapshot_path 
+            ? `<a href="/data/${log.snapshot_path}" target="_blank" style="color: var(--accent-cyan); text-decoration: none;">View</a>` 
+            : `<span style="color: var(--text-muted);">-</span>`;
+
+          return `
+            <tr>
+              <td>${escapeHtml(log.timestamp)}</td>
+              <td><code>${escapeHtml(log.employee_id)}</code></td>
+              <td><strong>${escapeHtml(log.employee_name)}</strong></td>
+              <td>${escapeHtml(log.department)}</td>
+              <td><span class="log-tag ${tagClass}">${escapeHtml(log.event_type)}</span></td>
+              <td>${(log.confidence_score * 100).toFixed(1)}%</td>
+              <td>${snapshotHtml}</td>
+            </tr>
+          `;
+        }).join("");
+      } catch (err) {
+        console.error("Error loading table logs:", err);
+      }
+    }
+
+    async function loadEmployeeTable() {
+      try {
+        const res = await fetch("/api/employees");
+        const emps = await res.json();
+        const tbody = document.getElementById("emps-tbody");
+
+        if (!emps || emps.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No registered employees found. Click "Enroll Employee" to add one.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = emps.map(emp => {
+          return `
+            <tr>
+              <td><code>${escapeHtml(emp.employee_id)}</code></td>
+              <td><strong>${escapeHtml(emp.name)}</strong></td>
+              <td>${escapeHtml(emp.department)}</td>
+              <td>${escapeHtml(emp.created_at || "N/A")}</td>
+              <td><span style="color: var(--accent-emerald);">Active</span></td>
+              <td>
+                <button onclick="deleteEmployee('${escapeHtml(emp.employee_id)}')" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; color: var(--accent-red);">Delete</button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      } catch (err) {
+        console.error("Error loading employees:", err);
+      }
+    }
+
+    async function deleteEmployee(id) {
+      if (!confirm(`Are you sure you want to delete employee '${id}'? This will remove their facial embeddings.`)) return;
+      try {
+        const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          loadEmployeeTable();
+        } else {
+          alert("Failed to delete employee.");
+        }
+      } catch (e) {
+        alert("Error: " + e.message);
+      }
+    }
+
+    function exportCSV() {
+      const dateInput = document.getElementById("export-date").value;
+      let url = "/api/attendance/export";
+      if (dateInput) {
+        url += `?date=${encodeURIComponent(dateInput)}`;
+      }
+      window.location.href = url;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Set today's date in export picker
+      const todayStr = new Date().toISOString().split('T')[0];
+      const dateEl = document.getElementById("export-date");
+      if (dateEl) dateEl.value = todayStr;
+      loadTableLogs();
+    });
+  </script>
+</body>
+</html>

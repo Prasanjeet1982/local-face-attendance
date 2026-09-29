@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# System Database & Model Weights (Local Storage)
+data/attendance.db
+data/models/
+data/snapshots/*
+!data/snapshots/.gitkeep
+data/exports/*
+!data/exports/.gitkeep
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Testing & Logs
+.pytest_cache/
+.coverage
+htmlcov/
+*.log

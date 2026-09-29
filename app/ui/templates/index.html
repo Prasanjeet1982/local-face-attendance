@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local AI Face Attendance Kiosk</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <nav class="navbar">
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <span>VisionPulse Attendance</span>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link active">Live Kiosk</a>
+      <a href="/dashboard" class="nav-link">Management Portal</a>
+      <button onclick="openEnrollModal()" class="btn btn-primary" id="btn-quick-enroll">+ Enroll Employee</button>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+    <!-- Stat Cards Overview -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-title">Present Today</span>
+        <span class="stat-value" id="stat-present">0</span>
+        <span class="stat-badge">Live Count</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-title">Enrolled Employees</span>
+        <span class="stat-value" id="stat-active">0</span>
+        <span class="stat-badge">Active Roster</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-title">Absent / Not Checked</span>
+        <span class="stat-value" id="stat-absent">0</span>
+        <span class="stat-badge">Pending</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-title">AI Engine</span>
+        <span class="stat-value" style="font-size: 1.4rem;">ArcFace + Retina</span>
+        <span class="stat-badge" style="color: var(--accent-emerald);">Passive Anti-Spoof</span>
+      </div>
+    </div>
+
+    <!-- Kiosk Live Video & Activity Feed -->
+    <div class="kiosk-grid">
+      <!-- Camera Stream Box -->
+      <div class="video-container">
+        <img id="camera-stream" class="video-feed" src="/api/video/feed" alt="Camera Feed Loading..." />
+      </div>
+
+      <!-- Real-time Activity Sidebar -->
+      <div class="kiosk-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">Today's Check-ins</div>
+          <span style="font-size: 0.8rem; color: var(--accent-cyan);">● Auto-Sync</span>
+        </div>
+        <div class="log-list" id="kiosk-log-list">
+          <div style="text-align:center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+            Connecting to recognition pipeline...
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Enrollment Modal -->
+  <div class="modal-overlay" id="enroll-modal">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.3rem; font-weight: 700;">Enroll New Employee</h2>
+        <button onclick="closeEnrollModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <form onsubmit="submitEnrollment(event)">
+        <div class="form-group">
+          <label class="form-label" for="enroll-id">Employee ID *</label>
+          <input type="text" id="enroll-id" class="form-control" placeholder="e.g. EMP-1042" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="enroll-name">Full Name *</label>
+          <input type="text" id="enroll-name" class="form-control" placeholder="e.g. Jane Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="enroll-dept">Department</label>
+          <input type="text" id="enroll-dept" class="form-control" placeholder="e.g. Computer Vision / R&D">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Face Image Source</label>
+          <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="startEnrollWebcam()">Use Web Camera</button>
+            <button type="button" class="btn btn-primary" id="btn-capture-snapshot" style="display:none;" onclick="captureSnapshot()">Snap Photo</button>
+          </div>
+
+          <div style="width: 100%; border-radius: var(--radius-md); overflow: hidden; background: #000; text-align: center;">
+            <video id="enroll-video" autoplay playsinline style="width: 100%; display: none;"></video>
+            <canvas id="enroll-canvas" style="width: 100%; display: none;"></canvas>
+          </div>
+
+          <div style="margin-top: 0.75rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Or upload a clear passport-style portrait:</span>
+            <input type="file" id="enroll-file" accept="image/*" class="form-control" style="margin-top: 0.4rem;">
+          </div>
+        </div>
+
+        <div id="enroll-status" style="margin-bottom: 1rem; font-size: 0.85rem; min-height: 1.2rem;"></div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeEnrollModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Register Face</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
